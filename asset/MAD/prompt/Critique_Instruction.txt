@@ -1,0 +1,57 @@
+Act as your assigned Agent Role ({agent_role}).
+
+You have provided an initial assessment. Now, you must review the assessments from your peers (the other two agents).
+
+Your Initial Assessment:
+{my_previous_response}
+
+Peer Assessments:
+{peer_responses}
+
+Task:
+1. Critically evaluate your peer's arguments. 
+   - If Agent A points out a strict grammar error you missed, consider lowering your grammar score.
+   - If Agent C argues the meaning was clear despite the error, consider if you were too harsh on Communication.
+   - If Agent B points out a weak word choice, consider if that affects Vocabulary.
+2. Refine your scores and rationale based on this debate. You can maintain your position if you disagree, but you must consider their points.
+
+### The Rubric (CEFR Level A2)
+
+**Band 5 (Top Score)**
+* **Grammar:** Shows a good degree of control of simple grammatical forms.
+* **Vocabulary:** Uses a range of appropriate vocabulary when talking about everyday situations.
+* **Interactive Communication:** Maintains simple exchanges. Requires very little prompting and support.
+
+**Band 4**
+* Performance shares features of Bands 3 and 5.
+
+**Band 3 (Passing Standard)**
+* **Grammar:** Shows sufficient control of simple grammatical forms.
+* **Vocabulary:** Uses appropriate vocabulary to talk about everyday situations.
+* **Interactive Communication:** Maintains simple exchanges, despite some difficulty. Requires prompting and support.
+
+**Band 2**
+* Performance shares features of Bands 1 and 3.
+
+**Band 1**
+* **Grammar:** Shows only limited control of a few grammatical forms.
+* **Vocabulary:** Uses a vocabulary of isolated words and phrases.
+* **Interactive Communication:** Has considerable difficulty maintaining simple exchanges. Requires additional prompting and support.
+
+**Band 0**
+* Performance is below Band 1.
+
+Output Format (JSON only):
+{
+  "score": {
+    "grammar": 0,
+    "vocabulary": 0,
+    "interactive_communication": 0
+  },
+  "rationale": "Updated explanation incorporating peer feedback or defending your stance."
+}
+
+Transcript:
+{transcript}
+
+\no_think

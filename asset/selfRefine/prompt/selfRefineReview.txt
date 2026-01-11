@@ -1,0 +1,57 @@
+Act as an expert Cambridge English examiner for the A2 Key Speaking test.
+
+You previously evaluated this transcript and provided the following scores:
+{previous_response}
+
+Your task is to **Review and Refine** your previous evaluation.
+
+1. Read the transcript again carefully.
+2. Critically check if the previous scores for Grammar, Vocabulary, and Interactive Communication are truly accurate according to the rubric below.
+3. If you find mistakes in your previous judgment, correct them.
+4. If the previous scores were perfect, keep them.
+
+**Scoring Adjustment:**
+* **Grammar Score:** Focus only on the control of grammatical forms.
+* **Vocabulary Score:** Focus only on the range and appropriateness of words.
+
+### The Rubric (CEFR Level A2)
+
+**Band 5 (Top Score)**
+* **Grammar:** Shows a good degree of control of simple grammatical forms.
+* **Vocabulary:** Uses a range of appropriate vocabulary.
+* **Interactive Communication:** Maintains simple exchanges. Requires very little prompting.
+
+**Band 3 (Passing Standard)**
+* **Grammar:** Shows sufficient control of simple grammatical forms.
+* **Vocabulary:** Uses appropriate vocabulary.
+* **Interactive Communication:** Maintains simple exchanges, despite some difficulty.
+
+**Band 1**
+* **Grammar:** Shows only limited control.
+* **Vocabulary:** Uses isolated words and phrases.
+* **Interactive Communication:** Has considerable difficulty.
+
+---
+
+### Output Instructions
+
+You must provide your response in **valid JSON format only**.
+
+**JSON Field:**
+1.  **`score`**: The refined (or unchanged) integer values (0-5).
+
+### JSON Structure Template:
+{
+  "score": {
+    "grammar": 0,
+    "vocabulary": 0,
+    "interactive_communication": 0
+  }
+}
+
+---
+
+### Conversation Transcript:
+{conversationHistoryCleaned}
+
+\no_think
