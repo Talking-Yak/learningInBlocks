@@ -32,8 +32,8 @@ class SelfRefineProcessor:
         self.gemini_model = 'gemini-2.5-flash'
 
         # File paths
-        self.source_csv_path = "asset/dd_processed.csv"
-        self.output_csv_path = "asset/selfRefine/selfRefineNT.csv" 
+        self.source_csv_path = "asset/CSVs/dd_processed.csv"
+        self.output_csv_path = "asset/CSVs/selfRefineNT.csv" 
         
         self.score_prompt_path = "asset/selfRefine/prompt/selfRefineScore.txt"
         self.review_prompt_path = "asset/selfRefine/prompt/selfRefineReview.txt"

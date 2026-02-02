@@ -6,6 +6,7 @@ __pycache__/
 
 learning_in_blocks/
 asset/outputCSVs/
+asset/CSVs/
 src/inf/
 src/blocks/utils/
 .env

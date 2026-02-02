@@ -25,8 +25,8 @@ class HomoMADProcessor:
         self.judge_model = "qwen/qwen3-30b-a3b-fp8"
 
         # File paths
-        self.source_csv_path = "asset/dd_processed.csv"
-        self.output_csv_path = "asset/MAD/homoMAD_output.csv" 
+        self.source_csv_path = "asset/CSVs/dd_processed.csv"
+        self.output_csv_path = "asset/CSVs/homoMAD_output.csv" 
         
         self.prompt_dir = "asset/MAD/homoMAD/prompt/"
         

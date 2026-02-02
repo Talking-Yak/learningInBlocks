@@ -28,14 +28,17 @@ class RecommendHomoMADProcessor:
         self.judge_model = "qwen/qwen3-30b-a3b-fp8"
 
         # File paths
-        self.source_csv_path = "asset/dd_processed.csv"
-        self.output_csv_path = "asset/MAD/recommendhomoMAD_output.csv" 
+        self.source_csv_path = "asset/CSVs/dd_processed.csv"
+        self.output_csv_path = "asset/CSVs/recommendhomoMAD_output.csv" 
         
         self.prompt_dir = "asset/MAD/recommendMAD/prompt/"
         
         # Context Data Paths
         self.grammar_csv_path = "asset/grammar_flow.csv"
         self.vocab_json_path = "asset/vocab.json"
+
+        # Evaluation Data Path
+        self.eval_csv_path = "asset/CSVs/homoMAD_output.csv"
 
         # Define output columns
         self.final_columns = [
@@ -80,6 +83,20 @@ class RecommendHomoMADProcessor:
             entry = f"Topic: {topic}\nWords: {word_str}\n"
             vocab_list.append(entry)
         self.vocab_context = "\n".join(vocab_list)
+
+        # 3. Load Evaluation Context
+        if os.path.exists(self.eval_csv_path):
+            print(f"Loading Evaluation Context from {self.eval_csv_path}...")
+            self.eval_df = pd.read_csv(self.eval_csv_path)[['learnerId', 'conversationHistoryCleaned', 'score', 'feedback']]
+        else:
+            print(f"Warning: Evaluation file not found: {self.eval_csv_path}")
+            self.eval_df = pd.DataFrame(columns=['learnerId', 'conversationHistoryCleaned', 'score', 'feedback'])
+
+    def get_evaluation_context(self, learnerId, transcript):
+        row = self.eval_df[(self.eval_df['learnerId'] == learnerId) & (self.eval_df['conversationHistoryCleaned'] == transcript)]
+        if not row.empty:
+            return str(row.iloc[0]['score']), str(row.iloc[0]['feedback'])
+        return "N/A", "N/A"
 
     def load_prompts(self):
         with open(f"{self.prompt_dir}AgentA_Grammar.txt", 'r') as f:
@@ -193,12 +210,18 @@ class RecommendHomoMADProcessor:
             self.df.at[index, 'rec_c_initial'] = res_c_init
             self.df.at[index, 'tokens_c_init'] = tok_c_init
             
+            # Get Evaluation Context
+            score_ctx, feedback_ctx = self.get_evaluation_context(row['learnerId'], transcript)
+
             # --- PHASE 2 ---
             peers_for_a = f"--- Peer B (Vocab) ---\n{res_b_init}\n\n--- Peer C (Conversation) ---\n{res_c_init}"
             p_reflect_a = self.critique_prompt.replace("{agent_role}", "Agent A (Grammar Expert)")\
                                               .replace("{my_previous_response}", res_a_init)\
                                               .replace("{peer_responses}", peers_for_a)\
-                                              .replace("{transcript}", transcript)
+                                              .replace("{transcript}", transcript)\
+                                              .replace("{score}", score_ctx)\
+                                              .replace("{feedback}", feedback_ctx)
+
             res_a_final, tok_a_final = self.call_novita(p_reflect_a)
             self.df.at[index, 'rec_a_final'] = res_a_final
             self.df.at[index, 'tokens_a_final'] = tok_a_final
@@ -207,7 +230,10 @@ class RecommendHomoMADProcessor:
             p_reflect_b = self.critique_prompt.replace("{agent_role}", "Agent B (Vocabulary Expert)")\
                                               .replace("{my_previous_response}", res_b_init)\
                                               .replace("{peer_responses}", peers_for_b)\
-                                              .replace("{transcript}", transcript)
+                                              .replace("{transcript}", transcript)\
+                                              .replace("{score}", score_ctx)\
+                                              .replace("{feedback}", feedback_ctx)
+
             res_b_final, tok_b_final = self.call_novita(p_reflect_b)
             self.df.at[index, 'rec_b_final'] = res_b_final
             self.df.at[index, 'tokens_b_final'] = tok_b_final
@@ -216,7 +242,10 @@ class RecommendHomoMADProcessor:
             p_reflect_c = self.critique_prompt.replace("{agent_role}", "Agent C (Conversation Expert)")\
                                               .replace("{my_previous_response}", res_c_init)\
                                               .replace("{peer_responses}", peers_for_c)\
-                                              .replace("{transcript}", transcript)
+                                              .replace("{transcript}", transcript)\
+                                              .replace("{score}", score_ctx)\
+                                              .replace("{feedback}", feedback_ctx)
+
             res_c_final, tok_c_final = self.call_novita(p_reflect_c)
             self.df.at[index, 'rec_c_final'] = res_c_final
             self.df.at[index, 'tokens_c_final'] = tok_c_final

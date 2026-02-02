@@ -11,7 +11,7 @@ cwd = os.getcwd()
 env_path = os.path.join(cwd, '.env')
 load_dotenv(dotenv_path=env_path)
 
-class RecommendSelfConsistencyProcessor:
+class RecommendSelfRefineProcessor:
     def __init__(self):
         # Configure Novita AI API
         novita_key = os.getenv('NOVITA_API_KEY')
@@ -26,8 +26,8 @@ class RecommendSelfConsistencyProcessor:
         self.judge_model = "qwen/qwen3-30b-a3b-fp8"
 
         # File paths
-        self.source_csv_path = "asset/dd_processed.csv"
-        self.output_csv_path = "asset/MAD/recommendSelfConsistency_output.csv" 
+        self.source_csv_path = "asset/CSVs/dd_processed.csv"
+        self.output_csv_path = "asset/CSVs/recommendSelfRefineWT_output.csv" 
         
         self.prompt_dir = "asset/MAD/recommendMAD/prompt/"
         
@@ -35,14 +35,18 @@ class RecommendSelfConsistencyProcessor:
         self.grammar_csv_path = "asset/grammar_flow.csv"
         self.vocab_json_path = "asset/vocab.json"
 
+        # Evaluation Data Path
+        self.eval_csv_path = "asset/CSVs/selfRefineWT1.csv"
+
         # Define output columns
         self.final_columns = [
             'learnerId', 
             'conversationHistoryCleaned', 
+            'score', 'feedback',
             'final_recommendation', 
             'response1', 'response2', 'response3',
             'tokens_response1', 'tokens_response2', 'tokens_response3',
-            'qwen_consensus_response'
+            'qwen_format_response'
         ]
         
         # Load logic
@@ -69,29 +73,50 @@ class RecommendSelfConsistencyProcessor:
             vocab_list.append(entry)
         self.vocab_context = "\n".join(vocab_list)
 
+        # 3. Load Evaluation Context
+        if os.path.exists(self.eval_csv_path):
+            print(f"Loading Evaluation Context from {self.eval_csv_path}...")
+            self.eval_df = pd.read_csv(self.eval_csv_path)[['learnerId', 'conversationHistoryCleaned', 'score', 'feedback']]
+        else:
+            print(f"Warning: Evaluation file not found: {self.eval_csv_path}")
+            self.eval_df = pd.DataFrame(columns=['learnerId', 'conversationHistoryCleaned', 'score', 'feedback'])
+
+    def get_evaluation_context(self, learnerId, transcript):
+        row = self.eval_df[(self.eval_df['learnerId'] == learnerId) & (self.eval_df['conversationHistoryCleaned'] == transcript)]
+        if not row.empty:
+            return str(row.iloc[0]['score']), str(row.iloc[0]['feedback'])
+        return "N/A", "N/A"
+
     def load_prompts(self):
-        # We use AgentC as the balanced recommendation prompt
         with open(f"{self.prompt_dir}AgentC_Conversation.txt", 'r') as f:
             self.recommend_prompt_template = f.read()
             
-        self.consensus_template = """
-You are an expert judge. You are given a student's conversation transcript and 3 different recommendation analyses provided by an AI.
-Your task is to analyze these 3 responses and the transcript to arrive at a final consensus recommendation.
+        self.refine_prompt_template = """
+You are an expert English tutor. You previously provided a recommendation for this student.
+Your task is to review and refine your recommendation based on the transcript.
 
 TRANSCRIPT:
 {transcript}
 
-RESPONSE 1:
-{response1}
+PREVIOUS RECOMMENDATION:
+{previous_response}
 
-RESPONSE 2:
-{response2}
+CURRICULUM CONTEXT:
+GRAMMAR SKILLS:
+{grammar_context}
 
-RESPONSE 3:
-{response3}
+VOCABULARY TOPICS:
+{vocab_context}
 
-Please evaluate the consistency among the responses. Choose the most accurate and helpful feedback based on the transcript.
-Output the final recommendation in the following JSON format:
+--- Evaluation Context ---
+This is the score we gave to the user earlier, which we think is fairly representative for the critique to consider:
+Score: {score}
+Feedback: {feedback}
+
+Please carefully re-read the transcript. Check if your previous selections for Grammar Skills and Vocabulary Topics are the MOST relevant for the student's needs.
+Refine your feedback and selections if necessary.
+
+OUTPUT FORMAT (JSON ONLY):
 {
   "feedback_well": "...",
   "feedback_improve": "...",
@@ -99,6 +124,21 @@ Output the final recommendation in the following JSON format:
   "vocab_skills": ["Topic1", "Topic2"]
 }
 Only output the JSON.
+"""
+
+        self.format_template = """
+You are a data formatting assistant. Ensure the input is clean, valid JSON.
+
+INPUT:
+{input_data}
+
+REQUIRED FORMAT:
+{
+  "feedback_well": "...",
+  "feedback_improve": "...",
+  "grammar_skills": [ID1, ID2],
+  "vocab_skills": ["Topic1", "Topic2"]
+}
 """
 
     def initialize_data(self):
@@ -159,11 +199,8 @@ Only output the JSON.
                 time.sleep(2)
         return None, None, 0
 
-    def get_consensus(self, transcript, responses):
-        prompt = self.consensus_template.replace("{transcript}", transcript)\
-                                               .replace("{response1}", responses[0])\
-                                               .replace("{response2}", responses[1])\
-                                               .replace("{response3}", responses[2])
+    def get_format(self, input_data):
+        prompt = self.format_template.replace("{input_data}", input_data)
         return self.call_judge(prompt)
 
     def process(self):
@@ -181,26 +218,49 @@ Only output the JSON.
 
             print(f"Processing Row {index+1}/{total_rows}")
             
-            prompt = self.recommend_prompt_template.replace("{transcript}", transcript)\
-                                                   .replace("{grammar_context}", self.grammar_context)\
-                                                   .replace("{vocab_context}", self.vocab_context)
+            # Step 1: Initial
+            p1 = self.recommend_prompt_template.replace("{transcript}", transcript)\
+                                               .replace("{grammar_context}", self.grammar_context)\
+                                               .replace("{vocab_context}", self.vocab_context)
+            r1, t1 = self.call_qwen(p1)
+            self.df.at[index, 'response1'] = r1
+            self.df.at[index, 'tokens_response1'] = t1
             
-            responses = []
-            tokens = []
-            for i in range(3):
-                res, tok = self.call_qwen(prompt, temperature=0.7)
-                responses.append(res)
-                tokens.append(tok)
-                self.df.at[index, f'response{i+1}'] = res
-                self.df.at[index, f'tokens_response{i+1}'] = tok
+            # Get Evaluation Context
+            score_ctx, feedback_ctx = self.get_evaluation_context(row['learnerId'], transcript)
+
+            # Step 2: Refine 1
+            p2 = self.refine_prompt_template.replace("{transcript}", transcript)\
+                                            .replace("{previous_response}", r1)\
+                                            .replace("{grammar_context}", self.grammar_context)\
+                                            .replace("{vocab_context}", self.vocab_context)\
+                                            .replace("{score}", score_ctx)\
+                                            .replace("{feedback}", feedback_ctx)
+                
+            r2, t2 = self.call_qwen(p2)
+            self.df.at[index, 'response2'] = r2
+            self.df.at[index, 'tokens_response2'] = t2
             
-            consensus_json, raw_consensus, _ = self.get_consensus(transcript, responses)
-            if consensus_json:
-                self.df.at[index, 'final_recommendation'] = json.dumps(consensus_json)
-                self.df.at[index, 'qwen_consensus_response'] = raw_consensus
+            # Step 3: Refine 2
+            p3 = self.refine_prompt_template.replace("{transcript}", transcript)\
+                                            .replace("{previous_response}", r2)\
+                                            .replace("{grammar_context}", self.grammar_context)\
+                                            .replace("{vocab_context}", self.vocab_context)\
+                                            .replace("{score}", score_ctx)\
+                                            .replace("{feedback}", feedback_ctx)
+                
+            r3, t3 = self.call_qwen(p3)
+            self.df.at[index, 'response3'] = r3
+            self.df.at[index, 'tokens_response3'] = t3
+            
+            # Final Formatting
+            final_json, raw_format, _ = self.get_format(r3)
+            if final_json:
+                self.df.at[index, 'final_recommendation'] = json.dumps(final_json)
+                self.df.at[index, 'qwen_format_response'] = raw_format
             
             self.df.to_csv(self.output_csv_path, index=False)
 
 if __name__ == "__main__":
-    processor = RecommendSelfConsistencyProcessor()
+    processor = RecommendSelfRefineProcessor()
     processor.process()

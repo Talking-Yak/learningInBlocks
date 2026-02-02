@@ -6,8 +6,10 @@ Here is your previous response:
 Here is the feedback and recommendations from your peers:
 {peer_responses}
 
-Here is the scoring rationale from the evaluation phase, which should serve as additional context for your debate:
-{scoring_rationale}
+--- Evaluation Context ---
+This is the score we gave to the user earlier, which we think is fairly representative for the critique to consider:
+Score: {score}
+Feedback: {feedback}
 
 TRANSCRIPT:
 {transcript}
