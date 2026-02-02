@@ -6,6 +6,9 @@ Here is your previous response:
 Here is the feedback and recommendations from your peers:
 {peer_responses}
 
+Here is the scoring rationale from the evaluation phase, which should serve as additional context for your debate:
+{scoring_rationale}
+
 TRANSCRIPT:
 {transcript}
 
@@ -22,5 +25,3 @@ OUTPUT FORMAT (JSON ONLY):
   "vocab_skills": ["TopicA", "TopicB"]
 }
 Do not include markdown formatting like ```json ... ```. Just the raw JSON string.
-
-\no_think

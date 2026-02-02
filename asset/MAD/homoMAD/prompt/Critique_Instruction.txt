@@ -1,5 +1,12 @@
 Act as your assigned Agent Role ({agent_role}).
 
+### Evaluation Context:
+- You have access to the full set of skills and vocabulary to which the learner has been exposed up to this point.
+- The learner is expected to draw on both the skills/vocabulary introduced in the current group and any content introduced previously.
+- **Cumulative Scoring:** Condition your scoring on cumulative exposure. Do not penalize learners for demonstrating knowledge from previous groups.
+- **Advanced Usage:** Do not penalize learners for using advanced skills or vocabulary that have not yet been taught. Instead, record such instances in the "advanced_topics" key.
+- **Rationale:** You must produce a detailed "scoring_rationale" describing your logic. This will be used as context for further analysis and debate.
+
 You have provided an initial assessment. Now, you must review the assessments from your peers (the other two agents).
 
 Your Initial Assessment:
@@ -48,7 +55,8 @@ Output Format (JSON only):
     "vocabulary": 0,
     "interactive_communication": 0
   },
-  "rationale": "Updated explanation incorporating peer feedback or defending your stance."
+  "advanced_topics": ["Any advanced skills/vocab used but not yet taught"],
+  "scoring_rationale": "Updated explanation incorporating peer feedback or defending your stance, considering cumulative exposure."
 }
 
 Transcript:

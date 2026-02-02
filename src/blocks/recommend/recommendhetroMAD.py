@@ -5,7 +5,6 @@ import time
 import re
 from dotenv import load_dotenv
 from openai import OpenAI
-from google import genai
 
 # Load environment variables
 cwd = os.getcwd()
@@ -36,13 +35,7 @@ class RecommendMADProcessor:
         self.model_b = "qwen/qwen3-30b-a3b-fp8"
         self.model_c = "openai/gpt-oss-20b"
         
-        # Configure Gemini API (Judge)
-        gemini_key = os.getenv('GOOGLE_API_KEY') or os.getenv('GEMINI_API_KEY')
-        if not gemini_key:
-            raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY not found.")
-            
-        self.gemini_client = genai.Client(api_key=gemini_key)
-        self.gemini_model = 'gemini-2.5-flash'
+        self.judge_model = "qwen/qwen3-30b-a3b-fp8"
 
         # File paths
         self.source_csv_path = "asset/dd_processed.csv"
@@ -61,7 +54,7 @@ class RecommendMADProcessor:
             'final_recommendation', # The consensus output
             'rec_a_initial', 'rec_b_initial', 'rec_c_initial',
             'rec_a_final', 'rec_b_final', 'rec_c_final',
-            'gemini_judge_response',
+            'judge_response',
             'tokens_a_init', 'tokens_b_init', 'tokens_c_init',
             'tokens_a_final', 'tokens_b_final', 'tokens_c_final',
             'tokens_judge'
@@ -116,7 +109,7 @@ class RecommendMADProcessor:
         with open(f"{self.prompt_dir}Critique_Instruction.txt", 'r') as f:
             self.critique_prompt = f.read()
         
-        with open(f"{self.prompt_dir}Gemini_Judge.txt", 'r') as f:
+        with open(f"{self.prompt_dir}judge.txt", 'r') as f:
             self.judge_prompt = f.read()
 
     def initialize_data(self):
@@ -127,7 +120,7 @@ class RecommendMADProcessor:
                 if col not in df.columns:
                     df[col] = None
                     df[col] = df[col].astype('object')
-                elif col in ['final_recommendation', 'rec_a_initial', 'rec_b_initial', 'rec_c_initial', 'rec_a_final', 'rec_b_final', 'rec_c_final', 'gemini_judge_response']:
+                elif col in ['final_recommendation', 'rec_a_initial', 'rec_b_initial', 'rec_c_initial', 'rec_a_final', 'rec_b_final', 'rec_c_final', 'judge_response']:
                      df[col] = df[col].astype('object')
             df = df[self.final_columns]
             return df
@@ -178,27 +171,33 @@ class RecommendMADProcessor:
                 else:
                     time.sleep(5)
 
-    def call_gemini(self, prompt, task_name="Gemini Judge"):
+    def call_judge(self, prompt, task_name="Qwen Judge"):
         print(f"  - Requesting {task_name}...")
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = self.gemini_client.models.generate_content(
-                    model=self.gemini_model,
-                    contents=prompt,
-                    config={
-                        'response_mime_type': 'application/json'
-                    }
+                response = self.novita_client.chat.completions.create(
+                    model=self.judge_model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful expert assistant. You must output valid JSON only."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=3000,
+                    temperature=0.1,
+                    response_format={ "type": "json_object" }
                 )
-                raw_text = response.text
+                
+                raw_text = response.choices[0].message.content
+                # Remove <think>...</think> blocks if present
+                raw_text = re.sub(r'<think>.*?</think>', '', raw_text, flags=re.DOTALL).strip()
                 
                 total_tokens = 0
-                if hasattr(response, 'usage_metadata') and response.usage_metadata:
-                    total_tokens = response.usage_metadata.total_token_count
+                if hasattr(response, 'usage') and response.usage:
+                    total_tokens = response.usage.completion_tokens
                 
                 return json.loads(raw_text), raw_text, total_tokens
             except Exception as e:
-                print(f"  - Gemini Error (Attempt {attempt+1}): {e}")
+                print(f"  - Qwen Judge Error (Attempt {attempt+1}): {e}")
                 time.sleep(2)
         return None, None, 0
 
@@ -296,15 +295,15 @@ class RecommendMADProcessor:
                                        .replace("{agent_c_final}", res_c_final)\
                                        .replace("{transcript}", transcript)
             
-            gemini_json, raw_text, gemini_tokens = self.call_gemini(p_judge, "Gemini Consensus")
+            qwen_json, raw_text, qwen_tokens = self.call_judge(p_judge, "Qwen Consensus")
             
-            if gemini_json:
-                print(f"   - Recommendation Found: {gemini_json}")
-                self.df.at[index, 'final_recommendation'] = json.dumps(gemini_json)
-                self.df.at[index, 'gemini_judge_response'] = raw_text
-                self.df.at[index, 'tokens_judge'] = gemini_tokens
+            if qwen_json:
+                print(f"   - Recommendation Found: {qwen_json}")
+                self.df.at[index, 'final_recommendation'] = json.dumps(qwen_json)
+                self.df.at[index, 'judge_response'] = raw_text
+                self.df.at[index, 'tokens_judge'] = qwen_tokens
             else:
-                print("   - Failed to get consensus from Gemini.")
+                print("   - Failed to get consensus from Qwen.")
             
             self.df.to_csv(self.output_csv_path, index=False)
             print("  - Saved.")
