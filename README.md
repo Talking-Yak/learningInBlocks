@@ -2,6 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 [![Venue](https://img.shields.io/badge/Accepted-AIED_2026-brightgreen.svg)](https://www.aied-conference.org/2026/program/main-track)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository contains the official implementation of the paper:
 **"_Learning in Blocks_: A Multi Agent Debate Assisted Personalized Adaptive Learning Framework for Language Learning"**
@@ -46,6 +47,7 @@ Progression requires demonstrating 70% mastery, and spaced review targets identi
 │       └── stats.py             # Statistical significance tests (t-tests, ANOVA)
 ├── asset/                       # Data assets (prompts, CSVs, vocab files)
 ├── requirements.txt             # Project dependencies
+├── LICENSE                      # Project license
 └── README.md                    # This file
 ```
 
@@ -92,3 +94,9 @@ The scripts in `src/evaluationResults/` can be used to replicate the results rep
 ## 🔗 Citation
 
 > The final version of this paper and its preprint are not yet available online. This section will be updated once the official links are released.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
