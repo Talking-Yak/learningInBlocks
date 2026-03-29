@@ -83,10 +83,6 @@ The scripts in `src/evaluationResults/` can be used to replicate the results rep
 - **Progress Visualization**: `python src/evaluationResults/generate_master_chart.py`
 - **Statistical Analysis**: `python src/evaluationResults/stats.py`
 
-### Learning Progression Visualization
-
-![Master Progress Chart](asset/master_progress_chart_highres.png)
-
 ---
 
 ## 🔗 Citation
