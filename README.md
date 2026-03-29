@@ -90,3 +90,9 @@ The scripts in `src/evaluationResults/` can be used to replicate the results rep
 ## 🔗 Citation
 
 > The final version of this paper and its preprint are not yet available online. This section will be updated once the official links are released.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
