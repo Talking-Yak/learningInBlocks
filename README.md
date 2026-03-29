@@ -1,7 +1,7 @@
 # _Learning in Blocks_
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![Venue](https://img.shields.io/badge/Accepted-AIED_2026-brightgreen.svg)]([https://aied2026.org/](https://www.aied-conference.org/2026/program/main-track))
+[![Venue](https://img.shields.io/badge/Accepted-AIED_2026-brightgreen.svg)](https://www.aied-conference.org/2026/program/main-track)
 
 This repository contains the official implementation of the paper:
 **"_Learning in Blocks_: A Multi Agent Debate Assisted Personalized Adaptive Learning Framework for Language Learning"**
