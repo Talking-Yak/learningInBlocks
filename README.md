@@ -1,9 +1,11 @@
 # _Learning in Blocks_
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![Venue](https://img.shields.io/badge/Accepted-AIED_2026-brightgreen.svg)](https://aied2026.org/)
 
 This repository contains the official implementation of the paper:
 **"_Learning in Blocks_: A Multi Agent Debate Assisted Personalized Adaptive Learning Framework for Language Learning"**
+_Accepted as a Main Paper at the 27th International Conference on AI in Education (AIED 2026), Seoul, Republic of Korea._
 
 ---
 
@@ -82,11 +84,11 @@ The scripts in `src/evaluationResults/` can be used to replicate the results rep
 - **Statistical Analysis**: `python src/evaluationResults/stats.py`
 
 ### Learning Progression Visualization
-![Master Progress Chart](asset/master_progress_chart_highres.png)
 
+![Master Progress Chart](asset/master_progress_chart_highres.png)
 
 ---
 
 ## 🔗 Citation
 
-> The preprint for this paper is not yet available online. This section will be updated with the arXiv link once it is released.
+> The final version of this paper and its preprint are not yet available online. This section will be updated once the official links are released.
